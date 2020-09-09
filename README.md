@@ -12,3 +12,8 @@ I am a bioinformatician in the Enteric Diseases Laboratory Branch at CDC.
 
 I have worked on some perl modules including `Bio::Kmer` but also more complete packages such as Mashtree and Lyve-SET.
 I have more in my repos and would be glad to collaborate with you!
+
+#### For more information
+
+* Google Scholar profile page https://scholar.google.com/citations?user=7ye89WMAAAAJ&hl=en
+* My about page https://about.me/lskatz
