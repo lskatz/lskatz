@@ -4,7 +4,7 @@
 **lskatz/lskatz** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 -->
 
-I am a bioinformatician in the Enteric Diseases Laboratory Branch at CDC.
+I am a bioinformatician in the Enteric Diseases Laboratory Branch at CDC. My repos include those for work and those for outside of work.
 
 - I speak :camel: perl, :gear: rust, and :dolphin: SQL
 - I pretend to speak :roll_eyes: R and :snake: Python.
