@@ -62,7 +62,6 @@ jobs:
           path: snapshots/
 
       - name: Create branch and pull request
-        if: always()
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
