@@ -16,7 +16,10 @@ I have more in my repos and would be glad to collaborate with you!
 <!-- impact-summary:start -->
 #### Impact summary
 
-_Impact metrics are updated automatically. See [BOASTS.md](./BOASTS.md) for the full report._
+_Updated automatically from the latest boast snapshots. See [BOASTS.md](./BOASTS.md) for the full report._
+
+- **mashtree** — 189 stars, 4 contributors, 0 release downloads ([full report](./BOASTS.md))
+- **fasten** — 82 stars, 4 contributors, 0 release downloads ([full report](./BOASTS.md))
 <!-- impact-summary:end -->
 
 #### For more information
