@@ -13,6 +13,12 @@ I am an informatics team lead in the Meningitis, Pertussis, and Diphtheria Labor
 I have worked on some perl modules including `Bio::Kmer` but also more complete packages such as Mashtree and Lyve-SET.
 I have more in my repos and would be glad to collaborate with you!
 
+<!-- impact-summary:start -->
+#### Impact summary
+
+_Impact metrics are updated automatically. See [BOASTS.md](./BOASTS.md) for the full report._
+<!-- impact-summary:end -->
+
 #### For more information
 
 * Google Scholar profile page https://scholar.google.com/citations?user=7ye89WMAAAAJ&hl=en

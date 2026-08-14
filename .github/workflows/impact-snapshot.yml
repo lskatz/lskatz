@@ -7,7 +7,8 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   snapshot:
@@ -65,6 +66,114 @@ jobs:
             echo "" >> BOASTS.md
           done <<< "$snapshots_found"
 
+      - name: Generate profile summary
+        if: always()
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          repo_root = Path(".")
+          readme_path = repo_root / "README.md"
+          snapshot_paths = sorted((repo_root / "snapshots").glob("*.json"))
+
+          start_marker = "<!-- impact-summary:start -->"
+          end_marker = "<!-- impact-summary:end -->"
+
+          def human_name(identity: str) -> str:
+              if identity.startswith("github:"):
+                  return identity.rsplit("/", 1)[-1]
+              return identity
+
+          def metric_value(metric: dict) -> str | None:
+              value = metric.get("value", {})
+              kind = value.get("type")
+              raw = value.get("value")
+              if kind == "count" and isinstance(raw, int):
+                  return f"{raw:,}"
+              if kind == "real" and isinstance(raw, (int, float)):
+                  return f"{raw:.2f}".rstrip("0").rstrip(".")
+              if raw is None:
+                  return None
+              return str(raw)
+
+          def first_metric(metrics: list[dict], *names: str) -> str | None:
+              for name in names:
+                  for metric in metrics:
+                      if metric.get("name") == name:
+                          value = metric_value(metric)
+                          if value is not None:
+                              return value
+              return None
+
+          def build_summary_line(label: str, metrics: list[dict]) -> str:
+              parts = []
+              for metric_name, label_name in (
+                  ("stars", "stars"),
+                  ("contributors", "contributors"),
+                  ("release_downloads", "release downloads"),
+                  ("forks", "forks"),
+              ):
+                  value = first_metric(metrics, metric_name)
+                  if value:
+                      parts.append(f"{value} {label_name}")
+                  if len(parts) == 3:
+                      break
+              if not parts:
+                  return f"- **{label}** — metrics available in [BOASTS.md](./BOASTS.md)"
+              return f"- **{label}** — {', '.join(parts)} ([full report](./BOASTS.md))"
+
+          summary_lines = [
+              "#### Impact summary",
+              "",
+              "_Updated automatically from the latest boast snapshots. See [BOASTS.md](./BOASTS.md) for the full report._",
+              "",
+          ]
+
+          if snapshot_paths:
+              for snapshot_path in snapshot_paths:
+                  data = json.loads(snapshot_path.read_text())
+                  repo_identity = next(
+                      (
+                          identity
+                          for identity in data.get("identities", [])
+                          if isinstance(identity, str) and identity.startswith("github:")
+                      ),
+                      snapshot_path.stem,
+                  )
+                  metrics = []
+                  for result in data.get("results", []):
+                      outcome = result.get("outcome", {})
+                      if outcome.get("status") != "values":
+                          continue
+                      metrics.extend(
+                          metric
+                          for metric in outcome.get("metrics", [])
+                          if metric.get("identity") == repo_identity
+                      )
+                  summary_lines.append(build_summary_line(human_name(repo_identity), metrics))
+          else:
+              summary_lines.append(
+                  "- Snapshot metrics will appear here after the workflow generates [BOASTS.md](./BOASTS.md)."
+              )
+
+          replacement = start_marker + "\n" + "\n".join(summary_lines) + "\n" + end_marker
+          readme = readme_path.read_text()
+          pattern = re.compile(re.escape(start_marker) + r".*?" + re.escape(end_marker), re.S)
+          if pattern.search(readme):
+              updated = pattern.sub(replacement, readme, count=1)
+          else:
+              anchor = "#### For more information"
+              if anchor in readme:
+                  updated = readme.replace(anchor, replacement + "\n\n" + anchor, 1)
+              else:
+                  updated = readme.rstrip() + "\n\n" + replacement + "\n"
+
+          readme_path.write_text(updated)
+          PY
+
       - name: Upload snapshots as artifact
         if: always()
         uses: actions/upload-artifact@v5
@@ -73,3 +182,19 @@ jobs:
           path: |
             snapshots/
             BOASTS.md
+
+      - name: Create pull request
+        if: always()
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automated/impact-snapshot
+          delete-branch: true
+          commit-message: Update impact snapshot
+          title: Update impact snapshot reports
+          body: |
+            ## Summary
+            - update `BOASTS.md` from the latest boast snapshots
+            - refresh the profile README impact summary with a link back to `BOASTS.md`
+          add-paths: |
+            BOASTS.md
+            README.md
