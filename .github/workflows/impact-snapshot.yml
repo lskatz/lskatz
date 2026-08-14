@@ -7,8 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   snapshot:
@@ -60,22 +59,3 @@ jobs:
         with:
           name: impact-snapshots
           path: snapshots/
-
-      - name: Create branch and pull request
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          branch="boast/update-$(date +%Y%m%d)"
-          git checkout -b "$branch"
-          git add snapshots BOASTS.md
-          git diff --cached --quiet && { echo "No changes to commit"; exit 0; }
-          git commit -m "chore: update impact boasts"
-          git push origin "$branch"
-          gh pr create \
-            --title "chore: update impact boasts" \
-            --body "Automated update of software impact metrics via [boast](https://github.com/mbhall88/boast)." \
-            --base main \
-            --head "$branch" || echo "PR already exists"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
