@@ -7,7 +7,8 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   snapshot:
@@ -65,11 +66,31 @@ jobs:
             echo "" >> BOASTS.md
           done <<< "$snapshots_found"
 
+      - name: Generate profile summary
+        run: |
+          set -euo pipefail
+          python scripts/generate_profile_summary.py
+
       - name: Upload snapshots as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: impact-snapshots
           path: |
             snapshots/
             BOASTS.md
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automated/impact-snapshot
+          delete-branch: true
+          commit-message: Update impact snapshot
+          title: Update impact snapshot reports
+          body: |
+            ## Summary
+            - update `BOASTS.md` from the latest boast snapshots
+            - refresh the profile README impact summary with a link back to `BOASTS.md`
+          add-paths: |
+            BOASTS.md
+            README.md
