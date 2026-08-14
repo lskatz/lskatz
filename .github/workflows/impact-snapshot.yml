@@ -69,7 +69,7 @@ jobs:
       - name: Generate profile summary
         run: |
           set -euo pipefail
-          python /home/runner/work/lskatz/lskatz/scripts/generate_profile_summary.py
+          python scripts/generate_profile_summary.py
 
       - name: Upload snapshots as artifact
         if: always()
