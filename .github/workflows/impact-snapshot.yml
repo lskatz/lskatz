@@ -67,7 +67,6 @@ jobs:
           done <<< "$snapshots_found"
 
       - name: Generate profile summary
-        if: always()
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -84,7 +83,7 @@ jobs:
 
           def human_name(identity: str) -> str:
               if identity.startswith("github:"):
-                  return identity.rsplit("/", 1)[-1]
+                  return identity.removeprefix("github:").rsplit("/", 1)[-1]
               return identity
 
           def metric_value(metric: dict) -> str | None:
@@ -117,7 +116,7 @@ jobs:
                   ("forks", "forks"),
               ):
                   value = first_metric(metrics, metric_name)
-                  if value:
+                  if value is not None:
                       parts.append(f"{value} {label_name}")
                   if len(parts) == 3:
                       break
@@ -141,19 +140,27 @@ jobs:
                           for identity in data.get("identities", [])
                           if isinstance(identity, str) and identity.startswith("github:")
                       ),
-                      snapshot_path.stem,
+                      None,
                   )
                   metrics = []
                   for result in data.get("results", []):
                       outcome = result.get("outcome", {})
                       if outcome.get("status") != "values":
                           continue
-                      metrics.extend(
-                          metric
-                          for metric in outcome.get("metrics", [])
-                          if metric.get("identity") == repo_identity
+                      if repo_identity is None:
+                          metrics.extend(outcome.get("metrics", []))
+                      else:
+                          metrics.extend(
+                              metric
+                              for metric in outcome.get("metrics", [])
+                              if metric.get("identity") == repo_identity
+                          )
+                  summary_lines.append(
+                      build_summary_line(
+                          human_name(repo_identity or snapshot_path.stem),
+                          metrics,
                       )
-                  summary_lines.append(build_summary_line(human_name(repo_identity), metrics))
+                  )
           else:
               summary_lines.append(
                   "- Snapshot metrics will appear here after the workflow generates [BOASTS.md](./BOASTS.md)."
@@ -184,7 +191,6 @@ jobs:
             BOASTS.md
 
       - name: Create pull request
-        if: always()
         uses: peter-evans/create-pull-request@v7
         with:
           branch: automated/impact-snapshot
